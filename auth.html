@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Digle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .auth-container {
+            background-color: #1a1a1a;
+            padding: 40px;
+            border-radius: 10px;
+            width: 400px;
+            border: 1px solid #333;
+        }
+        
+        .auth-container h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #d0d0d0;
+            font-style: italic;
+            font-style: oblique 30deg;
+        }
+        
+        .auth-container input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            color: #ffffff;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .auth-container button {
+            width: 100%;
+            padding: 12px;
+            background-color: #333;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .auth-container button:hover {
+            background-color: #444;
+        }
+        
+        .auth-container .toggle-btn {
+            background-color: #666;
+        }
+        
+        .auth-container .back-btn {
+            background-color: #444;
+            margin-top: 20px;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h1 id="authTitle">Вход</h1>
+        <div class="error" id="error"></div>
+        <input type="email" id="email" placeholder="Email">
+        <input type="text" id="name" placeholder="Имя" style="display: none;">
+        <input type="password" id="password" placeholder="Пароль">
+        <button id="authBtn">Войти</button>
+        <button class="toggle-btn" id="toggleAuthBtn">Создать аккаунт</button>
+        <button class="back-btn" id="backBtn">На главную</button>
+    </div>
+    
+    <script>
+        let isLoginMode = true;
+        
+        function getUsers() {
+            const users = localStorage.getItem('users');
+            return users ? JSON.parse(users) : [];
+        }
+        
+        function saveUsers(users) {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+        
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').textContent = isLoginMode ? 'Вход' : 'Регистрация';
+            document.getElementById('authBtn').textContent = isLoginMode ? 'Войти' : 'Создать аккаунт';
+            document.getElementById('toggleAuthBtn').textContent = isLoginMode ? 'Создать аккаунт' : 'Уже есть аккаунт?';
+            document.getElementById('name').style.display = isLoginMode ? 'none' : 'block';
+            document.getElementById('error').textContent = '';
+        }
+        
+        function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('name').value;
+            
+            if (!email || !password) {
+                document.getElementById('error').textContent = 'Заполните все поля';
+                return;
+            }
+            
+            if (!isLoginMode && !name) {
+                document.getElementById('error').textContent = 'Заполните имя';
+                return;
+            }
+            
+            const users = getUsers();
+            
+            if (isLoginMode) {
+                const user = users.find(u => u.email === email);
+                if (!user) {
+                    document.getElementById('error').textContent = 'Пользователь не найден';
+                    return;
+                }
+                if (user.password !== password) {
+                    document.getElementById('error').textContent = 'Неверный пароль';
+                    return;
+                }
+                
+                localStorage.setItem('user', JSON.stringify(user));
+                window.location.href = 'Index.html';
+                
+            } else {
+                const existingUser = users.find(u => u.email === email);
+                if (existingUser) {
+                    document.getElementById('error').textContent = 'Аккаунт с таким email уже существует';
+                    return;
+                }
+                
+                const newUser = {
+                    email: email,
+                    name: name,
+                    password: password,
+                    id: 'user_' + Date.now(),
+                    lastNameChange: null,
+                    avatar: undefined
+                };
+                
+                users.push(newUser);
+                saveUsers(users);
+                localStorage.setItem('user', JSON.stringify(newUser));
+                window.location.href = 'Index.html';
+            }
+        }
+        
+        document.getElementById('authBtn').addEventListener('click', handleAuth);
+        document.getElementById('toggleAuthBtn').addEventListener('click', toggleAuthMode);
+        document.getElementById('backBtn').addEventListener('click', () => {
+            window.location.href = 'Index.html';
+        });
+    </script>
+</body>
+</html>
