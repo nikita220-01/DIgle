@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Главная страница</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -67,6 +68,118 @@
             height: 30px;
             fill: #ffffff;
         }
+        
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .auth-modal.active {
+            display: flex;
+        }
+        
+        .auth-content {
+            background-color: #1a1a1a;
+            padding: 40px;
+            border-radius: 10px;
+            width: 400px;
+            border: 1px solid #333;
+        }
+        
+        .auth-content h2 {
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        
+        .auth-content input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            color: #ffffff;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .auth-content button {
+            width: 100%;
+            padding: 12px;
+            background-color: #333;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .auth-content button:hover {
+            background-color: #444;
+        }
+        
+        .auth-content .close-btn {
+            background-color: #666;
+        }
+        
+        .user-dashboard {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            z-index: 1000;
+            padding: 80px 40px 40px;
+        }
+        
+        .user-dashboard.active {
+            display: block;
+        }
+        
+        .user-dashboard h1 {
+            margin-bottom: 30px;
+            color: #d0d0d0;
+        }
+        
+        .user-dashboard .user-info {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        
+        .user-dashboard .close-dashboard {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #333;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .user-dashboard .logout-btn {
+            background-color: #666;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -77,11 +190,159 @@
             <span></span>
         </div>
         <div class="logo">Digle</div>
-        <div class="user-icon">
+        <div class="user-icon" id="userIcon">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
         </div>
     </nav>
+    
+    <div class="auth-modal" id="authModal">
+        <div class="auth-content">
+            <h2 id="authTitle">Вход</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Пароль">
+            <button id="authBtn">Войти</button>
+            <button id="toggleAuthBtn">Создать аккаунт</button>
+            <button class="close-btn" id="closeAuthBtn">Закрыть</button>
+        </div>
+    </div>
+    
+    <div class="user-dashboard" id="userDashboard">
+        <button class="close-dashboard" id="closeDashboardBtn">Закрыть</button>
+        <h1>Кабинет пользователя</h1>
+        <div class="user-info">
+            <p><strong>Email:</strong> <span id="userEmail">-</span></p>
+            <p><strong>ID:</strong> <span id="userId">-</span></p>
+        </div>
+        <button class="logout-btn" id="logoutBtn">Выйти</button>
+    </div>
+    
+    <script>
+        // Supabase конфигурация - ЗАПОЛНИТЕ ЭТИ ДАННЫЕ
+        const SUPABASE_URL = 'https://uifwchdngjrhwdgfkfrf.supabase.co';
+        const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'; // Вставьте ваш anon/public ключ
+        
+        let supabase = null;
+        let currentUser = null;
+        let isLoginMode = true;
+        
+        // Инициализация Supabase
+        function initSupabase() {
+            if (SUPABASE_ANON_KEY !== 'YOUR_ANON_KEY_HERE') {
+                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                checkUserSession();
+            } else {
+                console.warn('Supabase не настроен. Добавьте ваш anon/public ключ в код.');
+            }
+        }
+        
+        // Проверка сессии пользователя
+        async function checkUserSession() {
+            if (!supabase) return;
+            
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                showUserDashboard();
+            }
+        }
+        
+        // Показать модальное окно авторизации
+        function showAuthModal() {
+            document.getElementById('authModal').classList.add('active');
+        }
+        
+        // Скрыть модальное окно авторизации
+        function hideAuthModal() {
+            document.getElementById('authModal').classList.remove('active');
+        }
+        
+        // Показать кабинет пользователя
+        function showUserDashboard() {
+            document.getElementById('userDashboard').classList.add('active');
+            document.getElementById('userEmail').textContent = currentUser.email;
+            document.getElementById('userId').textContent = currentUser.id.slice(0, 8) + '...';
+        }
+        
+        // Скрыть кабинет пользователя
+        function hideUserDashboard() {
+            document.getElementById('userDashboard').classList.remove('active');
+        }
+        
+        // Переключение между входом и регистрацией
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').textContent = isLoginMode ? 'Вход' : 'Регистрация';
+            document.getElementById('authBtn').textContent = isLoginMode ? 'Войти' : 'Создать аккаунт';
+            document.getElementById('toggleAuthBtn').textContent = isLoginMode ? 'Создать аккаунт' : 'Уже есть аккаунт?';
+        }
+        
+        // Обработка авторизации/регистрации
+        async function handleAuth() {
+            if (!supabase) {
+                alert('Supabase не настроен. Добавьте ваш anon/public ключ в код.');
+                return;
+            }
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Заполните все поля');
+                return;
+            }
+            
+            try {
+                if (isLoginMode) {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+                    if (error) throw error;
+                    currentUser = data.user;
+                } else {
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password
+                    });
+                    if (error) throw error;
+                    currentUser = data.user;
+                }
+                
+                hideAuthModal();
+                showUserDashboard();
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        }
+        
+        // Выход из системы
+        async function handleLogout() {
+            if (!supabase) return;
+            
+            await supabase.auth.signOut();
+            currentUser = null;
+            hideUserDashboard();
+        }
+        
+        // Обработчики событий
+        document.getElementById('userIcon').addEventListener('click', () => {
+            if (currentUser) {
+                showUserDashboard();
+            } else {
+                showAuthModal();
+            }
+        });
+        
+        document.getElementById('closeAuthBtn').addEventListener('click', hideAuthModal);
+        document.getElementById('authBtn').addEventListener('click', handleAuth);
+        document.getElementById('toggleAuthBtn').addEventListener('click', toggleAuthMode);
+        document.getElementById('closeDashboardBtn').addEventListener('click', hideUserDashboard);
+        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        
+        // Инициализация
+        initSupabase();
+    </script>
 </body>
 </html>
