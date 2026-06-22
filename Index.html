@@ -267,6 +267,8 @@
             display: flex;
             gap: 10px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 10;
         }
         
         .chat-input {
@@ -295,6 +297,9 @@
             align-items: center;
             justify-content: center;
             transition: background-color 0.3s;
+            z-index: 1000;
+            position: relative;
+            pointer-events: auto;
         }
         
         .chat-send-btn:hover {
@@ -305,6 +310,7 @@
             width: 20px;
             height: 20px;
             fill: #ffffff;
+            pointer-events: none;
         }
         
         .friend-modal {
@@ -375,7 +381,7 @@
         }
         
         .friend-modal-content .success-btn:hover {
-            background-color: #45a049;
+            background-color: #45a049';
         }
         
         .friend-result {
@@ -452,7 +458,7 @@
         }
         
         .notification-modal-content .accept-btn:hover {
-            background-color: #45a049;
+            background-color: #45a049';
         }
         
         .notification-modal-content .reject-btn {
@@ -460,7 +466,7 @@
         }
         
         .notification-modal-content .reject-btn:hover {
-            background-color: #d32f2f;
+            background-color: #d32f2f';
         }
     </style>
 </head>
@@ -520,30 +526,34 @@
     </div>
     
     <script>
-        const burger = document.getElementById('burger');
-        const burgerMenu = document.getElementById('burgerMenu');
-        const userIcon = document.getElementById('userIcon');
-        const userAvatar = document.getElementById('userAvatar');
-        const userMenu = document.getElementById('userMenu');
-        const profileBtn = document.getElementById('profileBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const findFriendBtn = document.getElementById('findFriendBtn');
-        const friendsBar = document.getElementById('friendsBar');
-        const chatInput = document.getElementById('chatInput');
-        const chatSendBtn = document.getElementById('chatSendBtn');
-        const chatMessages = document.getElementById('chatMessages');
-        const friendModal = document.getElementById('friendModal');
-        const friendIdInput = document.getElementById('friendIdInput');
-        const searchFriendBtn = document.getElementById('searchFriendBtn');
-        const addFriendBtn = document.getElementById('addFriendBtn');
-        const closeFriendModalBtn = document.getElementById('closeFriendModalBtn');
-        const friendResult = document.getElementById('friendResult');
-        const notificationModal = document.getElementById('notificationModal');
-        const notificationText = document.getElementById('notificationText');
-        const acceptFriendBtn = document.getElementById('acceptFriendBtn');
-        const rejectFriendBtn = document.getElementById('rejectFriendBtn');
+        console.log('Script started');
         
-        const predefinedAvatars = [
+        var burger = document.getElementById('burger');
+        var burgerMenu = document.getElementById('burgerMenu');
+        var userIcon = document.getElementById('userIcon');
+        var userAvatar = document.getElementById('userAvatar');
+        var userMenu = document.getElementById('userMenu');
+        var profileBtn = document.getElementById('profileBtn');
+        var logoutBtn = document.getElementById('logoutBtn');
+        var findFriendBtn = document.getElementById('findFriendBtn');
+        var friendsBar = document.getElementById('friendsBar');
+        var chatInput = document.getElementById('chatInput');
+        var chatSendBtn = document.getElementById('chatSendBtn');
+        var chatMessages = document.getElementById('chatMessages');
+        var friendModal = document.getElementById('friendModal');
+        var friendIdInput = document.getElementById('friendIdInput');
+        var searchFriendBtn = document.getElementById('searchFriendBtn');
+        var addFriendBtn = document.getElementById('addFriendBtn');
+        var closeFriendModalBtn = document.getElementById('closeFriendModalBtn');
+        var friendResult = document.getElementById('friendResult');
+        var notificationModal = document.getElementById('notificationModal');
+        var notificationText = document.getElementById('notificationText');
+        var acceptFriendBtn = document.getElementById('acceptFriendBtn');
+        var rejectFriendBtn = document.getElementById('rejectFriendBtn');
+        
+        console.log('Elements loaded');
+        
+        var predefinedAvatars = [
             { color: '#333' },
             { color: '#4CAF50' },
             { color: '#2196F3' },
@@ -554,21 +564,23 @@
             { color: '#00BCD4' }
         ];
         
-        const personSVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#ffffff"/><path d="M12 14c-4.42 0-8 2.69-8 6v2h16v-2c0-3.31-3.58-6-8-6z" fill="#ffffff"/></svg>';
+        var personSVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#ffffff"/><path d="M12 14c-4.42 0-8 2.69-8 6v2h16v-2c0-3.31-3.58-6-8-6z" fill="#ffffff"/></svg>';
         
-        let currentUser = null;
-        let foundUser = null;
-        let pendingRequest = null;
-        let selectedFriend = null;
+        var currentUser = null;
+        var foundUser = null;
+        var pendingRequest = null;
+        var selectedFriend = null;
         
         function checkAuth() {
-            const user = localStorage.getItem('user');
+            console.log('checkAuth called');
+            var user = localStorage.getItem('user');
+            console.log('user from localStorage:', user);
             if (user) {
                 currentUser = JSON.parse(user);
                 userAvatar.classList.add('authenticated');
                 
                 if (currentUser.avatar !== undefined && predefinedAvatars[currentUser.avatar]) {
-                    const avatar = predefinedAvatars[currentUser.avatar];
+                    var avatar = predefinedAvatars[currentUser.avatar];
                     userAvatar.style.backgroundColor = avatar.color;
                     userAvatar.innerHTML = personSVG;
                 } else {
@@ -586,7 +598,7 @@
         }
         
         function getFriendRequests() {
-            const requests = localStorage.getItem('friendRequests');
+            var requests = localStorage.getItem('friendRequests');
             return requests ? JSON.parse(requests) : [];
         }
         
@@ -595,7 +607,7 @@
         }
         
         function getFriends() {
-            const friends = localStorage.getItem('friends');
+            var friends = localStorage.getItem('friends');
             return friends ? JSON.parse(friends) : [];
         }
         
@@ -606,23 +618,27 @@
         function loadFriends() {
             if (!currentUser) return;
             
-            const friends = getFriends();
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            var friends = getFriends();
+            var users = JSON.parse(localStorage.getItem('users') || '[]');
             
-            const myFriends = friends.filter(f => f.user1 === currentUser.id || f.user2 === currentUser.id);
+            var myFriends = friends.filter(function(f) {
+                return f.user1 === currentUser.id || f.user2 === currentUser.id;
+            });
             
             friendsBar.innerHTML = '';
             
-            myFriends.forEach(friendship => {
-                const friendId = friendship.user1 === currentUser.id ? friendship.user2 : friendship.user1;
-                const friend = users.find(u => u.id === friendId);
+            myFriends.forEach(function(friendship) {
+                var friendId = friendship.user1 === currentUser.id ? friendship.user2 : friendship.user1;
+                var friend = users.find(function(u) {
+                    return u.id === friendId;
+                });
                 
                 if (friend) {
-                    const friendAvatar = document.createElement('div');
+                    var friendAvatar = document.createElement('div');
                     friendAvatar.className = 'friend-avatar';
                     
                     if (friend.avatar !== undefined && predefinedAvatars[friend.avatar]) {
-                        const avatar = predefinedAvatars[friend.avatar];
+                        var avatar = predefinedAvatars[friend.avatar];
                         friendAvatar.style.backgroundColor = avatar.color;
                     }
                     
@@ -633,7 +649,9 @@
                         friendAvatar.classList.add('active');
                     }
                     
-                    friendAvatar.addEventListener('click', () => selectFriend(friend));
+                    friendAvatar.addEventListener('click', function() {
+                        selectFriend(friend);
+                    });
                     friendsBar.appendChild(friendAvatar);
                 }
             });
@@ -646,8 +664,15 @@
         }
         
         function getChatMessages() {
-            const messages = localStorage.getItem('chatMessages');
-            return messages ? JSON.parse(messages) : [];
+            var messages = localStorage.getItem('chatMessages');
+            if (!messages) return [];
+            try {
+                return JSON.parse(messages);
+            } catch (e) {
+                console.error('Invalid chatMessages in localStorage, clearing it:', e);
+                localStorage.removeItem('chatMessages');
+                return [];
+            }
         }
         
         function saveChatMessages(messages) {
@@ -655,27 +680,60 @@
         }
         
         function loadChatMessages() {
+            console.log('loadChatMessages called');
             chatMessages.innerHTML = '';
             
+            var allMessages = getChatMessages();
+            console.log('allMessages:', allMessages);
+            
             if (!selectedFriend) {
-                chatMessages.innerHTML = '<p style="color: #666; text-align: center; margin-top: 20px;">Выберите друга для начала чата</p>';
+                var selfMessages = allMessages.filter(function(m) {
+                    return m.chatId === 'self';
+                });
+                console.log('selfMessages:', selfMessages);
+                
+                if (selfMessages.length === 0) {
+                    chatMessages.innerHTML = '<p style="color: #666; text-align: center; margin-top: 20px;">Напишите сообщение или выберите друга для чата</p>';
+                    return;
+                }
+                
+                selfMessages.forEach(function(msg) {
+                    var messageDiv = document.createElement('div');
+                    messageDiv.className = 'message sent';
+                    
+                    var textDiv = document.createElement('div');
+                    textDiv.textContent = msg.text;
+                    
+                    var timeDiv = document.createElement('div');
+                    timeDiv.className = 'message-time';
+                    var date = new Date(msg.timestamp);
+                    timeDiv.textContent = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+                    
+                    messageDiv.appendChild(textDiv);
+                    messageDiv.appendChild(timeDiv);
+                    
+                    chatMessages.appendChild(messageDiv);
+                });
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
                 return;
             }
             
-            const allMessages = getChatMessages();
-            const chatId = getChatId(currentUser.id, selectedFriend.id);
-            const messages = allMessages.filter(m => m.chatId === chatId);
+            var chatId = getChatId(currentUser.id, selectedFriend.id);
+            var messages = allMessages.filter(function(m) {
+                return m.chatId === chatId;
+            });
             
-            messages.forEach(msg => {
-                const messageDiv = document.createElement('div');
+            messages.forEach(function(msg) {
+                var messageDiv = document.createElement('div');
                 messageDiv.className = msg.from === currentUser.id ? 'message sent' : 'message received';
                 
-                const textDiv = document.createElement('div');
+                var textDiv = document.createElement('div');
                 textDiv.textContent = msg.text;
                 
-                const timeDiv = document.createElement('div');
+                var timeDiv = document.createElement('div');
                 timeDiv.className = 'message-time';
-                const date = new Date(msg.timestamp);
+                var date = new Date(msg.timestamp);
                 timeDiv.textContent = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
                 
                 messageDiv.appendChild(textDiv);
@@ -692,36 +750,68 @@
         }
         
         function sendMessage() {
-            const text = chatInput.value.trim();
-            if (!text || !selectedFriend) return;
+            console.log('sendMessage called');
+            var text = chatInput.value.trim();
+            console.log('text:', text);
+            if (!text) return;
             
-            const allMessages = getChatMessages();
-            const chatId = getChatId(currentUser.id, selectedFriend.id);
+            if (!currentUser) {
+                console.log('No currentUser, redirecting to auth');
+                window.location.href = 'auth.html';
+                return;
+            }
             
-            const newMessage = {
-                chatId: chatId,
-                from: currentUser.id,
-                to: selectedFriend.id,
-                text: text,
-                timestamp: Date.now()
-            };
+            console.log('currentUser:', currentUser);
+            console.log('selectedFriend:', selectedFriend);
             
-            allMessages.push(newMessage);
+            var allMessages = getChatMessages();
+            console.log('allMessages:', allMessages);
+            
+            if (selectedFriend) {
+                var chatId = getChatId(currentUser.id, selectedFriend.id);
+                console.log('chatId:', chatId);
+                
+                var newMessage = {
+                    chatId: chatId,
+                    from: currentUser.id,
+                    to: selectedFriend.id,
+                    text: text,
+                    timestamp: Date.now()
+                };
+                
+                allMessages.push(newMessage);
+            } else {
+                var newMessage = {
+                    chatId: 'self',
+                    from: currentUser.id,
+                    to: 'self',
+                    text: text,
+                    timestamp: Date.now()
+                };
+                
+                allMessages.push(newMessage);
+            }
+            
             saveChatMessages(allMessages);
             
             chatInput.value = '';
             loadChatMessages();
+            console.log('Message sent');
         }
         
         function checkFriendRequests() {
             if (!currentUser) return;
             
-            const requests = getFriendRequests();
-            const pendingRequest = requests.find(r => r.to === currentUser.id && r.status === 'pending');
+            var requests = getFriendRequests();
+            var pendingRequest = requests.find(function(r) {
+                return r.to === currentUser.id && r.status === 'pending';
+            });
             
             if (pendingRequest) {
-                const users = JSON.parse(localStorage.getItem('users') || '[]');
-                const fromUser = users.find(u => u.id === pendingRequest.from);
+                var users = JSON.parse(localStorage.getItem('users') || '[]');
+                var fromUser = users.find(function(u) {
+                    return u.id === pendingRequest.from;
+                });
                 
                 if (fromUser) {
                     notificationText.textContent = fromUser.name + ' хочет добавить вас в друзья. Нравится ли вы общаться с этим человеком?';
@@ -732,7 +822,7 @@
         }
         
         function searchFriend() {
-            const friendId = friendIdInput.value.trim();
+            var friendId = friendIdInput.value.trim();
             
             if (!friendId) {
                 friendResult.innerHTML = '<p style="color: #ff6b6b;">Введите ID пользователя</p>';
@@ -744,8 +834,10 @@
                 return;
             }
             
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.id === friendId);
+            var users = JSON.parse(localStorage.getItem('users') || '[]');
+            var user = users.find(function(u) {
+                return u.id === friendId;
+            });
             
             if (!user) {
                 friendResult.innerHTML = '<p style="color: #ff6b6b;">Пользователь не найден</p>';
@@ -753,11 +845,11 @@
                 return;
             }
             
-            const friends = getFriends();
-            const alreadyFriends = friends.some(f => 
-                (f.user1 === currentUser.id && f.user2 === friendId) ||
-                (f.user1 === friendId && f.user2 === currentUser.id)
-            );
+            var friends = getFriends();
+            var alreadyFriends = friends.some(function(f) {
+                return (f.user1 === currentUser.id && f.user2 === friendId) ||
+                       (f.user1 === friendId && f.user2 === currentUser.id);
+            });
             
             if (alreadyFriends) {
                 friendResult.innerHTML = '<p style="color: #ff6b6b;">Вы уже друзья с этим пользователем</p>';
@@ -773,19 +865,19 @@
         function sendFriendRequest() {
             if (!foundUser) return;
             
-            const requests = getFriendRequests();
+            var requests = getFriendRequests();
             
-            const existingRequest = requests.find(r => 
-                (r.from === currentUser.id && r.to === foundUser.id) ||
-                (r.from === foundUser.id && r.to === currentUser.id)
-            );
+            var existingRequest = requests.find(function(r) {
+                return (r.from === currentUser.id && r.to === foundUser.id) ||
+                       (r.from === foundUser.id && r.to === currentUser.id);
+            });
             
             if (existingRequest) {
                 friendResult.innerHTML = '<p style="color: #ff6b6b;">Запрос уже существует</p>';
                 return;
             }
             
-            const newRequest = {
+            var newRequest = {
                 from: currentUser.id,
                 to: foundUser.id,
                 status: 'pending',
@@ -803,14 +895,16 @@
         function acceptFriendRequest() {
             if (!window.pendingRequest) return;
             
-            const requests = getFriendRequests();
-            const requestIndex = requests.findIndex(r => r.from === window.pendingRequest.from && r.to === window.pendingRequest.to);
+            var requests = getFriendRequests();
+            var requestIndex = requests.findIndex(function(r) {
+                return r.from === window.pendingRequest.from && r.to === window.pendingRequest.to;
+            });
             
             if (requestIndex !== -1) {
                 requests[requestIndex].status = 'accepted';
                 saveFriendRequests(requests);
                 
-                const friends = getFriends();
+                var friends = getFriends();
                 friends.push({
                     user1: window.pendingRequest.from,
                     user2: window.pendingRequest.to,
@@ -828,22 +922,22 @@
         function rejectFriendRequest() {
             if (!window.pendingRequest) return;
             
-            const requests = getFriendRequests();
-            const filteredRequests = requests.filter(r => 
-                !(r.from === window.pendingRequest.from && r.to === window.pendingRequest.to)
-            );
+            var requests = getFriendRequests();
+            var filteredRequests = requests.filter(function(r) {
+                return !(r.from === window.pendingRequest.from && r.to === window.pendingRequest.to);
+            });
             saveFriendRequests(filteredRequests);
             
             notificationModal.classList.remove('active');
             window.pendingRequest = null;
         }
         
-        burger.addEventListener('click', () => {
+        burger.addEventListener('click', function() {
             burgerMenu.classList.toggle('active');
         });
         
-        userIcon.addEventListener('click', (e) => {
-            const user = localStorage.getItem('user');
+        userIcon.addEventListener('click', function(e) {
+            var user = localStorage.getItem('user');
             if (user) {
                 e.preventDefault();
                 userMenu.classList.toggle('active');
@@ -852,18 +946,18 @@
             }
         });
         
-        profileBtn.addEventListener('click', () => {
+        profileBtn.addEventListener('click', function() {
             userMenu.classList.remove('active');
             window.open('profile.html', '_blank');
         });
         
-        logoutBtn.addEventListener('click', () => {
+        logoutBtn.addEventListener('click', function() {
             localStorage.removeItem('user');
             userMenu.classList.remove('active');
             checkAuth();
         });
         
-        findFriendBtn.addEventListener('click', () => {
+        findFriendBtn.addEventListener('click', function() {
             if (!currentUser) {
                 window.location.href = 'auth.html';
                 return;
@@ -872,7 +966,7 @@
             friendModal.classList.add('active');
         });
         
-        closeFriendModalBtn.addEventListener('click', () => {
+        closeFriendModalBtn.addEventListener('click', function() {
             friendModal.classList.remove('active');
             friendResult.innerHTML = '';
             friendIdInput.value = '';
@@ -888,15 +982,18 @@
         
         rejectFriendBtn.addEventListener('click', rejectFriendRequest);
         
-        chatSendBtn.addEventListener('click', sendMessage);
+        chatSendBtn.addEventListener('click', function() {
+            console.log('chatSendBtn clicked');
+            sendMessage();
+        });
         
-        chatInput.addEventListener('keypress', (e) => {
+        chatInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
         
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', function(e) {
             if (!burger.contains(e.target) && !burgerMenu.contains(e.target)) {
                 burgerMenu.classList.remove('active');
             }
@@ -905,8 +1002,11 @@
             }
         });
         
+        console.log('Calling checkAuth');
         checkAuth();
+        console.log('Calling loadChatMessages');
         loadChatMessages();
     </script>
 </body>
 </html>
+
