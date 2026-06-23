@@ -221,23 +221,82 @@
         }
         
         .message {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
             max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            position: relative;
-            word-wrap: break-word;
         }
-        
+
         .message.sent {
             align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            flex-direction: row;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 2px solid #444;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            position: relative;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+        }
+
+        .message.sent .message-bubble {
             background-color: #1a1a1a;
             border: 1px solid #333;
         }
         
-        .message.received {
-            align-self: flex-start;
-            background-color: #2a2a2a;
-            border: 1px solid #444;
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background-color: #ff4d4d;
+            color: #fff;
+            font-weight: bold;
+            display: none;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .message-bubble:hover .delete-btn {
+            display: flex;
+        }
+
+        .chat-open-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background-color: #333;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
         }
         
         .message.sent::before,
@@ -497,6 +556,7 @@
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-container">
             <input type="text" class="chat-input" id="chatInput" placeholder="Написать сообщение...">
+            <button class="chat-open-btn" id="openChatWindowBtn" title="Открыть чат в окне">⬚</button>
             <button class="chat-send-btn" id="chatSendBtn">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -527,6 +587,8 @@
     
     <script>
         console.log('Script started');
+        // set API_BASE to your server address (e.g. 'http://localhost:3000') to enable cross-device sync
+        const API_BASE = '';
         
         var burger = document.getElementById('burger');
         var burgerMenu = document.getElementById('burgerMenu');
@@ -599,17 +661,17 @@
         
         function getFriendRequests() {
             var requests = localStorage.getItem('friendRequests');
-            return requests ? JSON.parse(requests) : [];
-        }
-        
-        function saveFriendRequests(requests) {
-            localStorage.setItem('friendRequests', JSON.stringify(requests));
-        }
-        
-        function getFriends() {
-            var friends = localStorage.getItem('friends');
-            return friends ? JSON.parse(friends) : [];
-        }
+            if (API_BASE) {
+                fetch(API_BASE + '/friends/request', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from: currentUser.id, to: foundUser.id })
+                }).then(r=>r.json()).then(data=>{
+                    if (data.error) friendResult.innerHTML = '<p style="color: #ff6b6b;">'+data.error+'</p>';
+                    else { friendResult.innerHTML = '<p style="color: #4CAF50;">Запрос отправлен!</p>'; addFriendBtn.style.display='none'; friendIdInput.value=''; }
+                }).catch(()=> friendResult.innerHTML = '<p style="color: #ff6b6b;">Ошибка сети</p>');
+                return;
+            }
+            
         
         function saveFriends(friends) {
             localStorage.setItem('friends', JSON.stringify(friends));
@@ -617,38 +679,60 @@
         
         function loadFriends() {
             if (!currentUser) return;
-            
+            friendsBar.innerHTML = '';
+            if (API_BASE) {
+                fetch(API_BASE + '/friends/' + encodeURIComponent(currentUser.id)).then(r => r.json()).then(async (myFriends) => {
+                    const users = await fetch(API_BASE + '/users').then(r=>r.json()).catch(()=>[]);
+                    myFriends.forEach(function(friendship) {
+                        var friendId = friendship.user1 === currentUser.id ? friendship.user2 : friendship.user1;
+                        var friend = users.find(function(u) { return u.id === friendId; });
+                        if (friend) {
+                            var friendAvatar = document.createElement('div');
+                            friendAvatar.className = 'friend-avatar';
+                            if (friend.avatar !== undefined && predefinedAvatars[friend.avatar]) {
+                                var avatar = predefinedAvatars[friend.avatar];
+                                friendAvatar.style.backgroundColor = avatar.color;
+                            }
+                            friendAvatar.innerHTML = personSVG;
+                            friendAvatar.dataset.friendId = friendId;
+                            if (selectedFriend && selectedFriend.id === friendId) friendAvatar.classList.add('active');
+                            friendAvatar.addEventListener('click', function() { selectFriend(friend); });
+                            friendsBar.appendChild(friendAvatar);
+                        }
+                    });
+                }).catch(err => console.error('Failed to load friends from API', err));
+                return;
+            }
+
             var friends = getFriends();
             var users = JSON.parse(localStorage.getItem('users') || '[]');
-            
+
             var myFriends = friends.filter(function(f) {
                 return f.user1 === currentUser.id || f.user2 === currentUser.id;
             });
-            
-            friendsBar.innerHTML = '';
-            
+
             myFriends.forEach(function(friendship) {
                 var friendId = friendship.user1 === currentUser.id ? friendship.user2 : friendship.user1;
                 var friend = users.find(function(u) {
                     return u.id === friendId;
                 });
-                
+
                 if (friend) {
                     var friendAvatar = document.createElement('div');
                     friendAvatar.className = 'friend-avatar';
-                    
+
                     if (friend.avatar !== undefined && predefinedAvatars[friend.avatar]) {
                         var avatar = predefinedAvatars[friend.avatar];
                         friendAvatar.style.backgroundColor = avatar.color;
                     }
-                    
+
                     friendAvatar.innerHTML = personSVG;
                     friendAvatar.dataset.friendId = friendId;
-                    
+
                     if (selectedFriend && selectedFriend.id === friendId) {
                         friendAvatar.classList.add('active');
                     }
-                    
+
                     friendAvatar.addEventListener('click', function() {
                         selectFriend(friend);
                     });
@@ -682,6 +766,7 @@
         function loadChatMessages() {
             console.log('loadChatMessages called');
             chatMessages.innerHTML = '';
+                var users = JSON.parse(localStorage.getItem('users') || '[]');
             
             var allMessages = getChatMessages();
             console.log('allMessages:', allMessages);
@@ -697,22 +782,48 @@
                     return;
                 }
                 
+                var users = JSON.parse(localStorage.getItem('users') || '[]');
                 selfMessages.forEach(function(msg) {
                     var messageDiv = document.createElement('div');
                     messageDiv.className = 'message sent';
-                    
-                    var textDiv = document.createElement('div');
-                    textDiv.textContent = msg.text;
-                    
-                    var timeDiv = document.createElement('div');
-                    timeDiv.className = 'message-time';
-                    var date = new Date(msg.timestamp);
-                    timeDiv.textContent = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-                    
-                    messageDiv.appendChild(textDiv);
-                    messageDiv.appendChild(timeDiv);
-                    
-                    chatMessages.appendChild(messageDiv);
+
+                    var avatarDiv = document.createElement('div');
+                    avatarDiv.className = 'message-avatar';
+                    if (currentUser && currentUser.avatar !== undefined && predefinedAvatars[currentUser.avatar]) {
+                        avatarDiv.style.backgroundColor = predefinedAvatars[currentUser.avatar].color;
+                    }
+                    avatarDiv.innerHTML = personSVG;
+
+                        var bubble = document.createElement('div');
+                        bubble.className = 'message-bubble';
+                        var textDiv = document.createElement('div');
+                        textDiv.textContent = msg.text;
+
+                        var timeDiv = document.createElement('div');
+                        timeDiv.className = 'message-time';
+                        var date = new Date(msg.timestamp);
+                        timeDiv.textContent = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+
+                        bubble.appendChild(textDiv);
+                        bubble.appendChild(timeDiv);
+
+                        // add delete button for messages from current user
+                        if (currentUser && msg.from === currentUser.id) {
+                            var delBtn = document.createElement('button');
+                            delBtn.className = 'delete-btn';
+                            delBtn.title = 'Удалить сообщение';
+                            delBtn.textContent = '×';
+                            delBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                deleteMessage(msg.chatId, msg.timestamp);
+                            });
+                            bubble.appendChild(delBtn);
+                        }
+
+                        messageDiv.appendChild(avatarDiv);
+                        messageDiv.appendChild(bubble);
+
+                        chatMessages.appendChild(messageDiv);
                 });
                 
                 chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -727,18 +838,43 @@
             messages.forEach(function(msg) {
                 var messageDiv = document.createElement('div');
                 messageDiv.className = msg.from === currentUser.id ? 'message sent' : 'message received';
-                
+
+                var avatarDiv = document.createElement('div');
+                avatarDiv.className = 'message-avatar';
+                var fromUser = users.find(function(u) { return u.id === msg.from; }) || (msg.from === currentUser.id ? currentUser : null);
+                if (fromUser && fromUser.avatar !== undefined && predefinedAvatars[fromUser.avatar]) {
+                    avatarDiv.style.backgroundColor = predefinedAvatars[fromUser.avatar].color;
+                }
+                avatarDiv.innerHTML = personSVG;
+
+                var bubble = document.createElement('div');
+                bubble.className = 'message-bubble';
                 var textDiv = document.createElement('div');
                 textDiv.textContent = msg.text;
-                
+
                 var timeDiv = document.createElement('div');
                 timeDiv.className = 'message-time';
                 var date = new Date(msg.timestamp);
                 timeDiv.textContent = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-                
-                messageDiv.appendChild(textDiv);
-                messageDiv.appendChild(timeDiv);
-                
+
+                bubble.appendChild(textDiv);
+                bubble.appendChild(timeDiv);
+
+                if (currentUser && msg.from === currentUser.id) {
+                    var delBtn = document.createElement('button');
+                    delBtn.className = 'delete-btn';
+                    delBtn.title = 'Удалить сообщение';
+                    delBtn.textContent = '×';
+                    delBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        deleteMessage(msg.chatId, msg.timestamp);
+                    });
+                    bubble.appendChild(delBtn);
+                }
+
+                messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(bubble);
+
                 chatMessages.appendChild(messageDiv);
             });
             
@@ -765,6 +901,17 @@
             console.log('selectedFriend:', selectedFriend);
             
             var allMessages = getChatMessages();
+
+            // ensure current user is stored permanently in users
+            try {
+                var users = JSON.parse(localStorage.getItem('users') || '[]');
+                if (currentUser && !users.find(function(u) { return u.id === currentUser.id; })) {
+                    users.push({ id: currentUser.id, name: currentUser.name || ('User ' + currentUser.id), avatar: currentUser.avatar });
+                    localStorage.setItem('users', JSON.stringify(users));
+                }
+            } catch (e) {
+                console.error('Error ensuring user persisted:', e);
+            }
             console.log('allMessages:', allMessages);
             
             if (selectedFriend) {
@@ -801,18 +948,27 @@
         
         function checkFriendRequests() {
             if (!currentUser) return;
-            
+            if (API_BASE) {
+                // fetch friend requests server-side
+                fetch(API_BASE + '/users').then(r=>r.json()).then(users=>{
+                    fetch(API_BASE + '/friends/' + encodeURIComponent(currentUser.id)).then(r=>r.json()).then(function(){
+                        // server does not expose friendRequests list endpoint in this version; skip for now
+                    }).catch(()=>{});
+                }).catch(()=>{});
+                return;
+            }
+
             var requests = getFriendRequests();
             var pendingRequest = requests.find(function(r) {
                 return r.to === currentUser.id && r.status === 'pending';
             });
-            
+
             if (pendingRequest) {
                 var users = JSON.parse(localStorage.getItem('users') || '[]');
                 var fromUser = users.find(function(u) {
                     return u.id === pendingRequest.from;
                 });
-                
+
                 if (fromUser) {
                     notificationText.textContent = fromUser.name + ' хочет добавить вас в друзья. Нравится ли вы общаться с этим человеком?';
                     window.pendingRequest = pendingRequest;
@@ -834,29 +990,52 @@
                 return;
             }
             
+            if (API_BASE) {
+                fetch(API_BASE + '/users/' + encodeURIComponent(friendId)).then(r => r.json()).then(function(user) {
+                    if (user.error) {
+                        friendResult.innerHTML = '<p style="color: #ff6b6b;">Пользователь не найден</p>';
+                        addFriendBtn.style.display = 'none';
+                        return;
+                    }
+                    // check friendship via API friends list
+                    fetch(API_BASE + '/friends/' + encodeURIComponent(currentUser.id)).then(r=>r.json()).then(function(frList){
+                        var alreadyFriends = frList.some(function(f){ return (f.user1===currentUser.id && f.user2===user.id) || (f.user1===user.id && f.user2===currentUser.id); });
+                        if (alreadyFriends) {
+                            friendResult.innerHTML = '<p style="color: #ff6b6b;">Вы уже друзья с этим пользователем</p>';
+                            addFriendBtn.style.display = 'none';
+                            return;
+                        }
+                        foundUser = user;
+                        friendResult.innerHTML = '<p><strong>Имя:</strong> ' + user.name + '</p><p><strong>ID:</strong> ' + user.id + '</p>';
+                        addFriendBtn.style.display = 'block';
+                    }).catch(function(){ foundUser = user; friendResult.innerHTML = '<p><strong>Имя:</strong> ' + user.name + '</p><p><strong>ID:</strong> ' + user.id + '</p>'; addFriendBtn.style.display='block'; });
+                }).catch(function() { friendResult.innerHTML = '<p style="color: #ff6b6b;">Пользователь не найден</p>'; addFriendBtn.style.display='none'; });
+                return;
+            }
+
             var users = JSON.parse(localStorage.getItem('users') || '[]');
             var user = users.find(function(u) {
                 return u.id === friendId;
             });
-            
+
             if (!user) {
                 friendResult.innerHTML = '<p style="color: #ff6b6b;">Пользователь не найден</p>';
                 addFriendBtn.style.display = 'none';
                 return;
             }
-            
+
             var friends = getFriends();
             var alreadyFriends = friends.some(function(f) {
                 return (f.user1 === currentUser.id && f.user2 === friendId) ||
                        (f.user1 === friendId && f.user2 === currentUser.id);
             });
-            
+
             if (alreadyFriends) {
                 friendResult.innerHTML = '<p style="color: #ff6b6b;">Вы уже друзья с этим пользователем</p>';
                 addFriendBtn.style.display = 'none';
                 return;
             }
-            
+
             foundUser = user;
             friendResult.innerHTML = '<p><strong>Имя:</strong> ' + user.name + '</p><p><strong>ID:</strong> ' + user.id + '</p>';
             addFriendBtn.style.display = 'block';
@@ -894,16 +1073,27 @@
         
         function acceptFriendRequest() {
             if (!window.pendingRequest) return;
-            
+            if (API_BASE) {
+                fetch(API_BASE + '/friends/accept', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from: window.pendingRequest.from, to: window.pendingRequest.to })
+                }).then(r=>r.json()).then(()=>{
+                    loadFriends();
+                }).catch(err => console.error('Failed to accept friend via API', err));
+                notificationModal.classList.remove('active');
+                window.pendingRequest = null;
+                return;
+            }
+
             var requests = getFriendRequests();
             var requestIndex = requests.findIndex(function(r) {
                 return r.from === window.pendingRequest.from && r.to === window.pendingRequest.to;
             });
-            
+
             if (requestIndex !== -1) {
                 requests[requestIndex].status = 'accepted';
                 saveFriendRequests(requests);
-                
+
                 var friends = getFriends();
                 friends.push({
                     user1: window.pendingRequest.from,
@@ -911,10 +1101,10 @@
                     timestamp: Date.now()
                 });
                 saveFriends(friends);
-                
+
                 loadFriends();
             }
-            
+
             notificationModal.classList.remove('active');
             window.pendingRequest = null;
         }
@@ -930,6 +1120,15 @@
             
             notificationModal.classList.remove('active');
             window.pendingRequest = null;
+        }
+
+        function deleteMessage(chatId, timestamp) {
+            var messages = getChatMessages();
+            var filtered = messages.filter(function(m) {
+                return !(m.chatId === chatId && m.timestamp === timestamp);
+            });
+            saveChatMessages(filtered);
+            loadChatMessages();
         }
         
         burger.addEventListener('click', function() {

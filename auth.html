@@ -94,6 +94,8 @@
     
     <script>
         let isLoginMode = true;
+        // set API_BASE to your server address (e.g. 'http://localhost:3000') to enable cross-device storage
+        const API_BASE = '';
         
         function getUsers() {
             const users = localStorage.getItem('users');
@@ -128,8 +130,37 @@
                 return;
             }
             
+            if (API_BASE) {
+                if (isLoginMode) {
+                    fetch(API_BASE + '/auth/login', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    }).then(r => r.json()).then(data => {
+                        if (data.error) {
+                            document.getElementById('error').textContent = data.error;
+                            return;
+                        }
+                        localStorage.setItem('user', JSON.stringify(data));
+                        window.location.href = 'Index.html';
+                    }).catch(err => { document.getElementById('error').textContent = 'Ошибка сети'; });
+                } else {
+                    fetch(API_BASE + '/auth/register', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, name, password })
+                    }).then(r => r.json()).then(data => {
+                        if (data.error) {
+                            document.getElementById('error').textContent = data.error;
+                            return;
+                        }
+                        localStorage.setItem('user', JSON.stringify(data));
+                        window.location.href = 'Index.html';
+                    }).catch(err => { document.getElementById('error').textContent = 'Ошибка сети'; });
+                }
+                return;
+            }
+
             const users = getUsers();
-            
+
             if (isLoginMode) {
                 const user = users.find(u => u.email === email);
                 if (!user) {

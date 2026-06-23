@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Chat Window</title>
+    <style>
+        body{background:#000;color:#fff;font-family:Arial, sans-serif;margin:0;padding:0}
+        .window{display:flex;flex-direction:column;height:100vh}
+        .header{padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center}
+        .messages{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+        .input{display:flex;padding:10px;gap:8px;border-top:1px solid #222}
+        .chat-input{flex:1;padding:10px;border-radius:8px;border:1px solid #333;background:#111;color:#fff}
+        .btn{background:#333;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+        .message{display:flex;gap:8px;align-items:flex-end;max-width:80%}
+        .message.sent{align-self:flex-end;flex-direction:row-reverse}
+        .message-avatar{width:32px;height:32px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center}
+        .message-bubble{background:#222;padding:10px;border-radius:10px;position:relative}
+        .message-time{font-size:11px;color:#888;margin-top:6px;text-align:right}
+        .delete-btn{position:absolute;top:-8px;right:-8px;width:20px;height:20;border-radius:50%;border:none;background:#ff4d4d;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    </style>
+</head>
+<body>
+<div class="window">
+    <div class="header">
+        <div id="chatTitle">Чат</div>
+        <button id="closeBtn" class="btn">Закрыть</button>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input">
+        <input id="inputText" class="chat-input" placeholder="Написать сообщение...">
+        <button id="sendBtn" class="btn">Отправить</button>
+    </div>
+</div>
+<script>
+    var params = new URLSearchParams(location.search);
+    var friendId = params.get('friend') || 'self';
+    var messagesEl = document.getElementById('messages');
+    var input = document.getElementById('inputText');
+    var sendBtn = document.getElementById('sendBtn');
+    var closeBtn = document.getElementById('closeBtn');
+
+    function getCurrentUser(){
+        var u = localStorage.getItem('user');
+        return u?JSON.parse(u):null;
+    }
+
+    function getChatMessages(){
+        var m = localStorage.getItem('chatMessages');
+        try{ return m?JSON.parse(m):[] }catch(e){ localStorage.removeItem('chatMessages'); return [] }
+    }
+
+    function saveChatMessages(ms){ localStorage.setItem('chatMessages', JSON.stringify(ms)); }
+
+    function render(){
+        messagesEl.innerHTML='';
+        var all = getChatMessages();
+        var currentUser = getCurrentUser();
+        var chatId = (friendId==='self' || !currentUser)? 'self' : [currentUser.id, friendId].sort().join('_');
+        var msgs = all.filter(function(m){ return m.chatId===chatId });
+        msgs.forEach(function(m){
+            var div=document.createElement('div');
+            div.className = (m.from=== (currentUser?currentUser.id:null))? 'message sent' : 'message received';
+            var av=document.createElement('div'); av.className='message-avatar'; av.innerHTML='';
+            var bub=document.createElement('div'); bub.className='message-bubble';
+            var t=document.createElement('div'); t.textContent=m.text; bub.appendChild(t);
+            var time=document.createElement('div'); time.className='message-time'; time.textContent=new Date(m.timestamp).toLocaleTimeString(); bub.appendChild(time);
+            if (currentUser && m.from===currentUser.id){ var del=document.createElement('button'); del.className='delete-btn'; del.textContent='×'; del.onclick=function(){ deleteMessage(m.chatId,m.timestamp); }; bub.appendChild(del); }
+            div.appendChild(av); div.appendChild(bub); messagesEl.appendChild(div);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function send(){
+        var txt = input.value.trim(); if(!txt) return;
+        var currentUser = getCurrentUser(); if(!currentUser){ alert('Сначала войдите в систему на главной странице'); return; }
+        var all = getChatMessages();
+        var chatId = (friendId==='self')? 'self' : [currentUser.id, friendId].sort().join('_');
+        var n = { chatId: chatId, from: currentUser.id, to: friendId, text: txt, timestamp: Date.now() };
+        all.push(n); saveChatMessages(all); input.value=''; render();
+    }
+
+    function deleteMessage(chatId, timestamp){
+        var ms = getChatMessages(); ms = ms.filter(function(m){ return !(m.chatId===chatId && m.timestamp===timestamp); }); saveChatMessages(ms); render();
+    }
+
+    sendBtn.addEventListener('click', send);
+    input.addEventListener('keypress', function(e){ if(e.key==='Enter') send(); });
+    closeBtn.addEventListener('click', function(){ window.close(); });
+
+    render();
+</script>
+</body>
+</html>
