@@ -94,8 +94,8 @@
     
     <script>
         let isLoginMode = true;
-        // set API_BASE to your server address (e.g. 'http://localhost:3000') to enable cross-device storage
-        const API_BASE = '';
+        // Automatically use origin when opened over HTTP; keep empty when opened via file://
+        const API_BASE = (window.location.protocol === 'file:') ? '' : window.location.origin;
         
         function getUsers() {
             const users = localStorage.getItem('users');

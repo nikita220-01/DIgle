@@ -330,18 +330,27 @@
         
         function selectAvatar(index) {
             currentUser.avatar = index;
+            // persist locally
             localStorage.setItem('user', JSON.stringify(currentUser));
-            
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             const userIndex = users.findIndex(u => u.id === currentUser.id);
             if (userIndex !== -1) {
                 users[userIndex] = currentUser;
                 localStorage.setItem('users', JSON.stringify(users));
             }
-            
+
+            // sync to server if available
+            if (window.location.protocol !== 'file:' ) {
+                const API_BASE = window.location.origin;
+                fetch(API_BASE + '/users/' + encodeURIComponent(currentUser.id), {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ avatar: currentUser.avatar })
+                }).catch(()=>{});
+            }
+
             updateAvatarPreview();
             initAvatarGrid();
-            
+
             if (window.opener) {
                 window.opener.location.reload();
             }
@@ -426,23 +435,31 @@
             
             currentUser.name = name;
             currentUser.lastNameChange = new Date().toISOString();
-            
+
             localStorage.setItem('user', JSON.stringify(currentUser));
-            
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             const userIndex = users.findIndex(u => u.id === currentUser.id);
             if (userIndex !== -1) {
                 users[userIndex] = currentUser;
                 localStorage.setItem('users', JSON.stringify(users));
             }
-            
+
+            // sync to server when served over HTTP
+            if (window.location.protocol !== 'file:') {
+                const API_BASE = window.location.origin;
+                fetch(API_BASE + '/users/' + encodeURIComponent(currentUser.id), {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: currentUser.name, lastNameChange: currentUser.lastNameChange })
+                }).catch(()=>{});
+            }
+
             userName.textContent = name;
             newName.value = '';
             nameError.textContent = '';
             nameSuccess.textContent = 'Имя успешно изменено!';
-            
+
             checkNameChangeCooldown();
-            
+
             if (window.opener) {
                 window.opener.location.reload();
             }
@@ -472,20 +489,29 @@
             }
             
             currentUser.email = email;
-            
+
             localStorage.setItem('user', JSON.stringify(currentUser));
-            
+
             const userIndex = users.findIndex(u => u.id === currentUser.id);
             if (userIndex !== -1) {
                 users[userIndex] = currentUser;
                 localStorage.setItem('users', JSON.stringify(users));
             }
-            
+
+            // sync to server when possible
+            if (window.location.protocol !== 'file:') {
+                const API_BASE = window.location.origin;
+                fetch(API_BASE + '/users/' + encodeURIComponent(currentUser.id), {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentUser.email })
+                }).catch(()=>{});
+            }
+
             userEmail.textContent = email;
             newEmail.value = '';
             emailError.textContent = '';
             emailSuccess.textContent = 'Email успешно изменен! Письмо отправлено на ' + email;
-            
+
             if (window.opener) {
                 window.opener.location.reload();
             }

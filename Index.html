@@ -440,7 +440,7 @@
         }
         
         .friend-modal-content .success-btn:hover {
-            background-color: #45a049';
+            background-color: #45a049;
         }
         
         .friend-result {
@@ -517,7 +517,7 @@
         }
         
         .notification-modal-content .accept-btn:hover {
-            background-color: #45a049';
+            background-color: #45a049;
         }
         
         .notification-modal-content .reject-btn {
@@ -525,7 +525,7 @@
         }
         
         .notification-modal-content .reject-btn:hover {
-            background-color: #d32f2f';
+            background-color: #d32f2f;
         }
     </style>
 </head>
@@ -587,8 +587,8 @@
     
     <script>
         console.log('Script started');
-        // set API_BASE to your server address (e.g. 'http://localhost:3000') to enable cross-device sync
-        const API_BASE = '';
+        // Automatically use origin when opened over HTTP; keep empty when opened via file://
+        const API_BASE = (window.location.protocol === 'file:') ? '' : window.location.origin;
         
         var burger = document.getElementById('burger');
         var burgerMenu = document.getElementById('burgerMenu');
@@ -661,18 +661,11 @@
         
         function getFriendRequests() {
             var requests = localStorage.getItem('friendRequests');
-            if (API_BASE) {
-                fetch(API_BASE + '/friends/request', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from: currentUser.id, to: foundUser.id })
-                }).then(r=>r.json()).then(data=>{
-                    if (data.error) friendResult.innerHTML = '<p style="color: #ff6b6b;">'+data.error+'</p>';
-                    else { friendResult.innerHTML = '<p style="color: #4CAF50;">Запрос отправлен!</p>'; addFriendBtn.style.display='none'; friendIdInput.value=''; }
-                }).catch(()=> friendResult.innerHTML = '<p style="color: #ff6b6b;">Ошибка сети</p>');
-                return;
-            }
-            
-        
+            // If API is configured, server-side friendRequests endpoint can be used here.
+            // For now fallback to localStorage when API not implemented for requests.
+            return requests ? JSON.parse(requests) : [];
+        }
+
         function saveFriends(friends) {
             localStorage.setItem('friends', JSON.stringify(friends));
         }
@@ -914,46 +907,44 @@
             }
             console.log('allMessages:', allMessages);
             
+            var newMessage;
             if (selectedFriend) {
                 var chatId = getChatId(currentUser.id, selectedFriend.id);
                 console.log('chatId:', chatId);
-                
-                var newMessage = {
-                    chatId: chatId,
-                    from: currentUser.id,
-                    to: selectedFriend.id,
-                    text: text,
-                    timestamp: Date.now()
-                };
-                
-                allMessages.push(newMessage);
+                newMessage = { chatId: chatId, from: currentUser.id, to: selectedFriend.id, text: text, timestamp: Date.now() };
             } else {
-                var newMessage = {
-                    chatId: 'self',
-                    from: currentUser.id,
-                    to: 'self',
-                    text: text,
-                    timestamp: Date.now()
-                };
-                
-                allMessages.push(newMessage);
+                newMessage = { chatId: 'self', from: currentUser.id, to: 'self', text: text, timestamp: Date.now() };
             }
-            
-            saveChatMessages(allMessages);
-            
-            chatInput.value = '';
-            loadChatMessages();
+
+            if (API_BASE) {
+                fetch(API_BASE + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newMessage) })
+                    .then(()=>{ chatInput.value = ''; loadChatMessages(); })
+                    .catch(err => { console.error('Failed to POST message', err); allMessages.push(newMessage); saveChatMessages(allMessages); chatInput.value=''; loadChatMessages(); });
+            } else {
+                allMessages.push(newMessage);
+                saveChatMessages(allMessages);
+                chatInput.value = '';
+                loadChatMessages();
+            }
             console.log('Message sent');
         }
         
         function checkFriendRequests() {
             if (!currentUser) return;
             if (API_BASE) {
-                // fetch friend requests server-side
-                fetch(API_BASE + '/users').then(r=>r.json()).then(users=>{
-                    fetch(API_BASE + '/friends/' + encodeURIComponent(currentUser.id)).then(r=>r.json()).then(function(){
-                        // server does not expose friendRequests list endpoint in this version; skip for now
-                    }).catch(()=>{});
+                fetch(API_BASE + '/friendRequests/' + encodeURIComponent(currentUser.id)).then(r=>r.json()).then(function(requests){
+                    if (requests && requests.length) {
+                        // load users to get names
+                        fetch(API_BASE + '/users').then(r=>r.json()).then(function(users){
+                            var pending = requests[0];
+                            var fromUser = users.find(function(u){ return u.id === pending.from; });
+                            if (fromUser) {
+                                notificationText.textContent = fromUser.name + ' хочет добавить вас в друзья. Нравится ли вы общаться с этим человеком?';
+                                window.pendingRequest = pending;
+                                notificationModal.classList.add('active');
+                            }
+                        }).catch(()=>{});
+                    }
                 }).catch(()=>{});
                 return;
             }

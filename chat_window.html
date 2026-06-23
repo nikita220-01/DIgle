@@ -54,10 +54,25 @@
 
     function render(){
         messagesEl.innerHTML='';
-        var all = getChatMessages();
         var currentUser = getCurrentUser();
         var chatId = (friendId==='self' || !currentUser)? 'self' : [currentUser.id, friendId].sort().join('_');
+        if (window.location.protocol !== 'file:') {
+            // try to load messages from server
+            fetch(window.location.origin + '/messages/' + encodeURIComponent(chatId)).then(r=>r.json()).then(function(msgs){
+                appendMessages(msgs, currentUser);
+            }).catch(function(){ var all = getChatMessages(); var msgs = all.filter(function(m){ return m.chatId===chatId }); appendMessages(msgs, currentUser); });
+            return;
+        }
+        var all = getChatMessages();
         var msgs = all.filter(function(m){ return m.chatId===chatId });
+        msgs.forEach(function(m){
+            // handled in appendMessages
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function appendMessages(msgs, currentUser){
+        messagesEl.innerHTML='';
         msgs.forEach(function(m){
             var div=document.createElement('div');
             div.className = (m.from=== (currentUser?currentUser.id:null))? 'message sent' : 'message received';
@@ -68,15 +83,21 @@
             if (currentUser && m.from===currentUser.id){ var del=document.createElement('button'); del.className='delete-btn'; del.textContent='×'; del.onclick=function(){ deleteMessage(m.chatId,m.timestamp); }; bub.appendChild(del); }
             div.appendChild(av); div.appendChild(bub); messagesEl.appendChild(div);
         });
-        messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
     function send(){
         var txt = input.value.trim(); if(!txt) return;
         var currentUser = getCurrentUser(); if(!currentUser){ alert('Сначала войдите в систему на главной странице'); return; }
-        var all = getChatMessages();
         var chatId = (friendId==='self')? 'self' : [currentUser.id, friendId].sort().join('_');
         var n = { chatId: chatId, from: currentUser.id, to: friendId, text: txt, timestamp: Date.now() };
+        if (window.location.protocol !== 'file:') {
+            fetch(window.location.origin + '/messages', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(n)
+            }).then(()=>{ input.value=''; render(); }).catch(function(){ var all = getChatMessages(); all.push(n); saveChatMessages(all); input.value=''; render(); });
+            return;
+        }
+        var all = getChatMessages();
         all.push(n); saveChatMessages(all); input.value=''; render();
     }
 

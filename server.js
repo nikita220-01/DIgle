@@ -17,6 +17,8 @@ async function writeData(data){
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+// Serve static files (frontend) from project root so files are available via HTTP
+app.use(express.static(path.join(__dirname)));
 
 app.get('/users', async (req, res) => {
   const data = await readData();
@@ -28,6 +30,20 @@ app.get('/users/:id', async (req, res) => {
   const u = data.users.find(x => x.id === req.params.id);
   if(!u) return res.status(404).json({ error: 'Not found' });
   res.json(u);
+});
+
+// Update user fields (name, email, avatar, password)
+app.put('/users/:id', async (req, res) => {
+  const id = req.params.id;
+  const data = await readData();
+  const idx = data.users.findIndex(u => u.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const user = data.users[idx];
+  const allowed = ['name','email','avatar','password','lastNameChange'];
+  allowed.forEach(k => { if (req.body[k] !== undefined) user[k] = req.body[k]; });
+  data.users[idx] = user;
+  await writeData(data);
+  res.json(user);
 });
 
 app.post('/auth/register', async (req, res) => {
@@ -66,6 +82,14 @@ app.post('/friends/request', async (req, res) => {
   data.friendRequests.push(reqObj);
   await writeData(data);
   res.json(reqObj);
+});
+
+// Return pending friend requests for a user
+app.get('/friendRequests/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  const data = await readData();
+  const requests = data.friendRequests.filter(r => r.to === userId && r.status === 'pending');
+  res.json(requests);
 });
 
 app.post('/friends/accept', async (req, res) => {
