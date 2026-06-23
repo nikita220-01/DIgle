@@ -49,6 +49,42 @@
             color: #d0d0d0;
         }
         
+        .id-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .id-box {
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-family: monospace;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            flex: 1;
+        }
+        
+        .id-box:hover {
+            border-color: #4CAF50;
+        }
+        
+        .copy-btn {
+            background-color: #333;
+            border: 1px solid #444;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background-color: #444;
+        }
+        
         .avatar-section {
             text-align: center;
             margin-bottom: 30px;
@@ -214,7 +250,11 @@
         <div class="profile-info">
             <p><strong>Имя:</strong> <span id="userName">-</span></p>
             <p><strong>Email:</strong> <span id="userEmail">-</span></p>
-            <p><strong>ID пользователя:</strong> <span id="userId">-</span></p>
+            <p><strong>ID пользователя:</strong></p>
+            <div class="id-container">
+                <div class="id-box" id="userId" title="Нажмите, чтобы скопировать">-</div>
+                <button class="copy-btn" id="copyIdBtn">Копировать</button>
+            </div>
         </div>
         
         <div class="change-section">
@@ -243,6 +283,7 @@
         const userName = document.getElementById('userName');
         const userEmail = document.getElementById('userEmail');
         const userId = document.getElementById('userId');
+        const copyIdBtn = document.getElementById('copyIdBtn');
         const newName = document.getElementById('newName');
         const changeNameBtn = document.getElementById('changeNameBtn');
         const newEmail = document.getElementById('newEmail');
@@ -460,6 +501,23 @@
         
         changeNameBtn.addEventListener('click', changeName);
         changeEmailBtn.addEventListener('click', changeEmail);
+        
+        function copyId() {
+            const idText = userId.textContent;
+            if (idText && idText !== '-') {
+                navigator.clipboard.writeText(idText).then(() => {
+                    copyIdBtn.textContent = 'Скопировано!';
+                    setTimeout(() => {
+                        copyIdBtn.textContent = 'Копировать';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                });
+            }
+        }
+        
+        userId.addEventListener('click', copyId);
+        copyIdBtn.addEventListener('click', copyId);
         
         loadUserData();
     </script>
