@@ -102,11 +102,39 @@ app.post('/friends/accept', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Reject a friend request (remove from friendRequests)
+app.post('/friendRequests/reject', async (req, res) => {
+  const { from, to } = req.body;
+  if(!from || !to) return res.status(400).json({ error: 'Missing' });
+  const data = await readData();
+  data.friendRequests = data.friendRequests.filter(r => !(r.from===from && r.to===to));
+  await writeData(data);
+  res.json({ ok: true });
+});
+
 app.get('/messages/:chatId', async (req, res) => {
   const data = await readData();
   const chatId = req.params.chatId;
   const msgs = data.messages.filter(m => m.chatId === chatId);
   res.json(msgs);
+});
+
+// Return all messages (for admin / stats)
+app.get('/messages', async (req, res) => {
+  const data = await readData();
+  res.json(data.messages);
+});
+
+// Return all friends (for admin / stats)
+app.get('/friends', async (req, res) => {
+  const data = await readData();
+  res.json(data.friends);
+});
+
+// Return all friend requests (for admin / stats)
+app.get('/friendRequests', async (req, res) => {
+  const data = await readData();
+  res.json(data.friendRequests);
 });
 
 app.post('/messages', async (req, res) => {

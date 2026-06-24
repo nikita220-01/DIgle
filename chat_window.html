@@ -56,9 +56,11 @@
         messagesEl.innerHTML='';
         var currentUser = getCurrentUser();
         var chatId = (friendId==='self' || !currentUser)? 'self' : [currentUser.id, friendId].sort().join('_');
-        if (window.location.protocol !== 'file:') {
+        const STORED_API = localStorage.getItem('API_BASE') || '';
+        if (STORED_API || window.location.protocol !== 'file:') {
             // try to load messages from server
-            fetch(window.location.origin + '/messages/' + encodeURIComponent(chatId)).then(r=>r.json()).then(function(msgs){
+            const base = STORED_API || window.location.origin;
+            fetch(base + '/messages/' + encodeURIComponent(chatId)).then(r=>r.json()).then(function(msgs){
                 appendMessages(msgs, currentUser);
             }).catch(function(){ var all = getChatMessages(); var msgs = all.filter(function(m){ return m.chatId===chatId }); appendMessages(msgs, currentUser); });
             return;

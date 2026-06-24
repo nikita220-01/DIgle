@@ -91,11 +91,37 @@
         <button class="toggle-btn" id="toggleAuthBtn">Создать аккаунт</button>
         <button class="back-btn" id="backBtn">На главную</button>
     </div>
+    <button id="apiBtn" title="API settings" style="position:fixed;right:12px;top:12px;background:#222;color:#fff;border:0;padding:8px 10px;border-radius:6px;cursor:pointer;z-index:999">API</button>
+
+    <div id="apiModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:1000">
+        <div style="background:#111;padding:20px;border-radius:8px;border:1px solid #333;min-width:320px;color:#fff">
+            <h3 style="margin-top:0">API Base URL</h3>
+            <input id="apiInput" placeholder="https://your-ngrok.io" style="width:100%;padding:8px;margin-bottom:10px;background:#0a0a0a;border:1px solid #333;color:#fff;border-radius:4px">
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button id="saveApiBtn" style="padding:8px 12px;background:#4CAF50;border:0;border-radius:4px;color:#fff;cursor:pointer">Save</button>
+                <button id="clearApiBtn" style="padding:8px 12px;background:#666;border:0;border-radius:4px;color:#fff;cursor:pointer">Clear</button>
+                <button id="closeApiBtn" style="padding:8px 12px;background:#333;border:0;border-radius:4px;color:#fff;cursor:pointer">Close</button>
+            </div>
+            <p style="margin-top:12px;color:#aaa">Current: <span id="apiCurrent">(not set)</span></p>
+        </div>
+    </div>
     
     <script>
         let isLoginMode = true;
-        // Automatically use origin when opened over HTTP; keep empty when opened via file://
-        const API_BASE = (window.location.protocol === 'file:') ? '' : window.location.origin;
+        // If URL contains ?api=... set it into localStorage so users can open a link from the tunnel
+        (function(){
+            try{
+                const params = new URLSearchParams(window.location.search);
+                const apiParam = params.get('api');
+                if(apiParam && apiParam.trim()) {
+                    localStorage.setItem('API_BASE', apiParam.trim());
+                }
+            }catch(e){}
+        })();
+
+        // Allow overriding API base via localStorage (set `localStorage.setItem('API_BASE', 'https://your-url')`)
+        // Fallback: when served over HTTP use origin, otherwise empty for file://
+        const API_BASE = (localStorage.getItem('API_BASE')) ? localStorage.getItem('API_BASE') : ((window.location.protocol === 'file:') ? '' : window.location.origin);
         
         function getUsers() {
             const users = localStorage.getItem('users');
@@ -115,7 +141,27 @@
             document.getElementById('error').textContent = '';
         }
         
-        function handleAuth() {
+        async function detectLocalServer(timeoutMs = 500) {
+            const url = 'http://localhost:3000/users';
+            try {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), timeoutMs);
+                const res = await fetch(url, { signal: controller.signal });
+                clearTimeout(id);
+                if (res.ok) return 'http://localhost:3000';
+            } catch (e) {
+                return '';
+            }
+            return '';
+        }
+
+        async function handleAuth() {
+            if (window.location.protocol === 'file:' && !API_BASE) {
+                const detected = await detectLocalServer(400);
+                if (detected) {
+                    window.API_BASE = detected;
+                }
+            }
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const name = document.getElementById('name').value;
@@ -203,6 +249,28 @@
         document.getElementById('backBtn').addEventListener('click', () => {
             window.location.href = 'Index.html';
         });
+
+        // API settings UI
+        const apiBtn = document.getElementById('apiBtn');
+        const apiModal = document.getElementById('apiModal');
+        const apiInput = document.getElementById('apiInput');
+        const apiCurrent = document.getElementById('apiCurrent');
+        document.getElementById('saveApiBtn').addEventListener('click', function(){
+            const v = apiInput.value.trim();
+            if(v) localStorage.setItem('API_BASE', v);
+            else localStorage.removeItem('API_BASE');
+            updateApiDisplay();
+            apiModal.style.display='none';
+            location.reload();
+        });
+        document.getElementById('clearApiBtn').addEventListener('click', function(){
+            localStorage.removeItem('API_BASE');
+            apiInput.value=''; updateApiDisplay();
+        });
+        document.getElementById('closeApiBtn').addEventListener('click', function(){ apiModal.style.display='none'; });
+        apiBtn.addEventListener('click', function(){ apiInput.value = localStorage.getItem('API_BASE') || ''; apiModal.style.display='flex'; });
+        function updateApiDisplay(){ apiCurrent.textContent = localStorage.getItem('API_BASE') || '(not set)'; }
+        updateApiDisplay();
     </script>
 </body>
 </html>

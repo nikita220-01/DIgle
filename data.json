@@ -1,6 +1,79 @@
 {
-  "users": [],
-  "friends": [],
+  "users": [
+    {
+      "id": "user_1782217120376",
+      "email": "test@example.com",
+      "name": "Test",
+      "password": "pass",
+      "lastNameChange": null
+    },
+    {
+      "id": "user_admin_001",
+      "email": "nikilyh20@gmail.com",
+      "name": "Admin",
+      "password": "admin123",
+      "lastNameChange": null,
+      "isAdmin": true,
+      "avatar": 4
+    },
+    {
+      "id": "user_1782221816025",
+      "email": "alice@example.com",
+      "name": "Alice",
+      "password": "alicepass",
+      "lastNameChange": null
+    },
+    {
+      "id": "user_1782221816035",
+      "email": "bob@example.com",
+      "name": "Bob",
+      "password": "bobpass",
+      "lastNameChange": null
+    }
+  ],
+  "friends": [
+    {
+      "user1": "user_1782221816025",
+      "user2": "user_1782221816035",
+      "timestamp": 1782221816049
+    }
+  ],
   "friendRequests": [],
-  "messages": []
+  "messages": [
+    {
+      "chatId": "self",
+      "from": "user_admin_001",
+      "to": "self",
+      "text": "как дела?😀",
+      "timestamp": 1782220600740
+    },
+    {
+      "chatId": "self",
+      "from": "user_admin_001",
+      "to": "self",
+      "text": "ук",
+      "timestamp": 1782220613777
+    },
+    {
+      "chatId": "self",
+      "from": "user_admin_001",
+      "to": "self",
+      "text": "кп",
+      "timestamp": 1782220618684
+    },
+    {
+      "chatId": "self",
+      "from": "user_admin_001",
+      "to": "self",
+      "text": "кп",
+      "timestamp": 1782220880480
+    },
+    {
+      "chatId": "self",
+      "from": "user_admin_001",
+      "to": "self",
+      "text": "вву",
+      "timestamp": 1782287239997
+    }
+  ]
 }
