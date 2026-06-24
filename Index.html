@@ -372,6 +372,55 @@
             pointer-events: none;
         }
         
+        .emoji-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: #333;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+            color: #fff;
+            font-size: 18px;
+        }
+
+        .emoji-btn:hover { background-color: #444; }
+
+        .emoji-picker {
+            position: absolute;
+            bottom: 64px;
+            right: 20px;
+            background: #121212;
+            border: 1px solid #333;
+            padding: 8px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(5, 36px);
+            gap: 6px;
+            z-index: 2000;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+        }
+
+        .emoji-picker button {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-picker button:hover {
+            background: #222;
+        }
+        
         .friend-modal {
             display: none;
             position: fixed;
@@ -557,6 +606,7 @@
         <div class="chat-input-container">
             <input type="text" class="chat-input" id="chatInput" placeholder="Написать сообщение...">
             <button class="chat-open-btn" id="openChatWindowBtn" title="Открыть чат в окне">⬚</button>
+            <button class="emoji-btn" id="emojiBtn" title="Выбрать эмодзи">😊</button>
             <button class="chat-send-btn" id="chatSendBtn">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -601,6 +651,8 @@
         var friendsBar = document.getElementById('friendsBar');
         var chatInput = document.getElementById('chatInput');
         var chatSendBtn = document.getElementById('chatSendBtn');
+        var emojiBtn = document.getElementById('emojiBtn');
+        var emojiPicker = null;
         var chatMessages = document.getElementById('chatMessages');
         var friendModal = document.getElementById('friendModal');
         var friendIdInput = document.getElementById('friendIdInput');
@@ -1189,6 +1241,78 @@
             }
             if (!userIcon.contains(e.target) && !userMenu.contains(e.target)) {
                 userMenu.classList.remove('active');
+            }
+        });
+        
+        // Emoji picker implementation
+        function createEmojiPicker() {
+            if (emojiPicker) return;
+            emojiPicker = document.createElement('div');
+            emojiPicker.className = 'emoji-picker';
+            var emojis = ['😀','😁','😂','😊','😍','😢','😎','👍','🎉','❤️','🔥','🤔','🙏','🤝','😅'];
+            emojis.forEach(function(em) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = em;
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    insertAtCursor(chatInput, em);
+                    hideEmojiPicker();
+                    chatInput.focus();
+                });
+                emojiPicker.appendChild(btn);
+            });
+            document.body.appendChild(emojiPicker);
+            positionEmojiPicker();
+        }
+
+        function positionEmojiPicker() {
+            if (!emojiPicker) return;
+            var rect = document.querySelector('.chat-input-container').getBoundingClientRect();
+            // place picker above the input area, aligned to the right
+            emojiPicker.style.right = (window.innerWidth - (rect.right - 20)) + 'px';
+            emojiPicker.style.bottom = (window.innerHeight - rect.top + 12) + 'px';
+        }
+
+        function showEmojiPicker() {
+            createEmojiPicker();
+            emojiPicker.style.display = 'grid';
+            positionEmojiPicker();
+        }
+
+        function hideEmojiPicker() {
+            if (!emojiPicker) return;
+            emojiPicker.style.display = 'none';
+        }
+
+        function insertAtCursor(input, text) {
+            // works for input[type=text]
+            var start = input.selectionStart || 0;
+            var end = input.selectionEnd || 0;
+            var value = input.value;
+            input.value = value.slice(0, start) + text + value.slice(end);
+            var caret = start + text.length;
+            input.setSelectionRange(caret, caret);
+            // trigger input event if any listeners rely on it
+            var ev = new Event('input', { bubbles: true });
+            input.dispatchEvent(ev);
+        }
+
+        if (emojiBtn) {
+            emojiBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (emojiPicker && emojiPicker.style.display !== 'none') {
+                    hideEmojiPicker();
+                } else {
+                    showEmojiPicker();
+                }
+            });
+        }
+
+        window.addEventListener('resize', function() { positionEmojiPicker(); });
+        document.addEventListener('click', function(e) {
+            if (emojiPicker && !emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                hideEmojiPicker();
             }
         });
         
