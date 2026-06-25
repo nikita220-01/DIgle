@@ -15,7 +15,16 @@ async function writeData(data){
 }
 
 const app = express();
-app.use(cors());
+// Enable CORS permissively so frontends served from Netlify or tunnels can access API
+const corsOptions = {
+  origin: true, // reflect request origin
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true
+};
+app.use(cors(corsOptions));
+// Ensure OPTIONS preflight requests are handled and return CORS headers
+app.options('*', cors(corsOptions));
 app.use(bodyParser.json());
 // Serve static files (frontend) from project root so files are available via HTTP
 app.use(express.static(path.join(__dirname)));

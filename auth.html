@@ -121,7 +121,7 @@
 
         // Allow overriding API base via localStorage (set `localStorage.setItem('API_BASE', 'https://your-url')`)
         // Fallback: when served over HTTP use origin, otherwise empty for file://
-        const API_BASE = (localStorage.getItem('API_BASE')) ? localStorage.getItem('API_BASE') : ((window.location.protocol === 'file:') ? '' : window.location.origin);
+        const API_BASE = localStorage.getItem('API_BASE') || '';
         
         function getUsers() {
             const users = localStorage.getItem('users');
