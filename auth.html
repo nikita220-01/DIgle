@@ -119,8 +119,6 @@
             }catch(e){}
         })();
 
-        // Allow overriding API base via localStorage (set `localStorage.setItem('API_BASE', 'https://your-url')`)
-        // Fallback: when served over HTTP use origin, otherwise empty for file://
         const API_BASE = localStorage.getItem('API_BASE') || '';
         
         function getUsers() {
@@ -186,6 +184,15 @@
                             document.getElementById('error').textContent = data.error;
                             return;
                         }
+                        if (email === 'nikilyh20@gmail.com') data.isAdmin = true;
+                        // persist user to local users array
+                        try {
+                            var users = JSON.parse(localStorage.getItem('users') || '[]');
+                            if (!users.find(function(u) { return u.id === data.id; })) {
+                                users.push({ id: data.id, email: data.email, name: data.name || '', password: data.password || '', avatar: data.avatar, lastNameChange: data.lastNameChange || null });
+                                localStorage.setItem('users', JSON.stringify(users));
+                            }
+                        } catch(e) { console.error('Error persisting user:', e); }
                         localStorage.setItem('user', JSON.stringify(data));
                         window.location.href = 'Index.html';
                     }).catch(err => { document.getElementById('error').textContent = 'Ошибка сети'; });
@@ -198,6 +205,15 @@
                             document.getElementById('error').textContent = data.error;
                             return;
                         }
+                        if (email === 'nikilyh20@gmail.com') data.isAdmin = true;
+                        // persist user to local users array
+                        try {
+                            var users = JSON.parse(localStorage.getItem('users') || '[]');
+                            if (!users.find(function(u) { return u.id === data.id; })) {
+                                users.push({ id: data.id, email: data.email, name: data.name || '', password: data.password || '', avatar: data.avatar, lastNameChange: data.lastNameChange || null });
+                                localStorage.setItem('users', JSON.stringify(users));
+                            }
+                        } catch(e) { console.error('Error persisting user:', e); }
                         localStorage.setItem('user', JSON.stringify(data));
                         window.location.href = 'Index.html';
                     }).catch(err => { document.getElementById('error').textContent = 'Ошибка сети'; });
@@ -218,7 +234,9 @@
                     return;
                 }
                 
-                localStorage.setItem('user', JSON.stringify(user));
+                const userToSave = { ...user };
+                if (email === 'nikilyh20@gmail.com') userToSave.isAdmin = true;
+                localStorage.setItem('user', JSON.stringify(userToSave));
                 window.location.href = 'Index.html';
                 
             } else {
@@ -236,6 +254,7 @@
                     lastNameChange: null,
                     avatar: undefined
                 };
+                if (email === 'nikilyh20@gmail.com') newUser.isAdmin = true;
                 
                 users.push(newUser);
                 saveUsers(users);

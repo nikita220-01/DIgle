@@ -8,15 +8,6 @@
       "lastNameChange": null
     },
     {
-      "id": "user_admin_001",
-      "email": "nikilyh20@gmail.com",
-      "name": "Admin",
-      "password": "admin123",
-      "lastNameChange": null,
-      "isAdmin": true,
-      "avatar": 4
-    },
-    {
       "id": "user_1782221816025",
       "email": "alice@example.com",
       "name": "Alice",
@@ -29,6 +20,15 @@
       "name": "Bob",
       "password": "bobpass",
       "lastNameChange": null
+    },
+    {
+      "id": "Admin_001",
+      "email": "nikilyh20@gmail.com",
+      "name": "Admin",
+      "password": "Admin123",
+      "lastNameChange": null,
+      "isAdmin": true,
+      "avatar": 4
     }
   ],
   "friends": [
